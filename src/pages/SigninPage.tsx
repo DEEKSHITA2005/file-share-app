@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { useNavigate, Link } from 'react-router-dom';
 
 const SigninPage: React.FC = () => {
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate();
+  const [error, setError] = useState('');
 
-  const handleSignin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSignin = async () => {
     try {
-      const response = await fetch('https://your-api-url/signin', {
+      const response = await fetch('https://n6aqvbq3qg.execute-api.ap-south-1.amazonaws.com/api/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -20,47 +18,90 @@ const SigninPage: React.FC = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('username', username); // store logged-in user
-        toast.success('Login successful!');
-        navigate('/upload'); // or redirect to dashboard
+        console.log('Signin successful:', data);
+        navigate('/share'); // Navigate to ShareFilePage
       } else {
-        toast.error(data.message || 'Login failed');
+        setError(data.message || 'Signin failed');
       }
-    } catch (error) {
-      toast.error('Login error');
-      console.error('Login error:', error);
+    } catch (err) {
+      console.error('Signin error:', err);
+      setError('Something went wrong. Try again.');
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-20 bg-white p-6 rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-4 text-center">Sign In</h2>
-      <form onSubmit={handleSignin} className="space-y-4">
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <h2 style={styles.title}>Sign In</h2>
         <input
           type="text"
           placeholder="Username"
-          className="w-full border px-4 py-2 rounded"
           value={username}
-          onChange={e => setUsername(e.target.value)}
-          required
+          onChange={(e) => setUsername(e.target.value)}
+          style={styles.input}
         />
         <input
           type="password"
           placeholder="Password"
-          className="w-full border px-4 py-2 rounded"
           value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
+          onChange={(e) => setPassword(e.target.value)}
+          style={styles.input}
         />
-        <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
-        >
-          Sign In
-        </button>
-      </form>
+        {error && <p style={styles.error}>{error}</p>}
+        <button onClick={handleSignin} style={styles.button}>Sign In</button>
+        <p style={styles.linkText}>
+          Don't have an account? <Link to="/signup">Sign Up</Link>
+        </p>
+      </div>
     </div>
   );
+};
+
+const styles: { [key: string]: React.CSSProperties } = {
+  container: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    backgroundColor: '#f4f4f4',
+  },
+  card: {
+    backgroundColor: 'white',
+    padding: '2rem',
+    borderRadius: '12px',
+    boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+    minWidth: '300px',
+    textAlign: 'center',
+  },
+  title: {
+    marginBottom: '1.5rem',
+  },
+  input: {
+    width: '100%',
+    padding: '0.75rem',
+    margin: '0.5rem 0',
+    border: '1px solid #ccc',
+    borderRadius: '6px',
+    fontSize: '1rem',
+  },
+  button: {
+    width: '100%',
+    padding: '0.75rem',
+    backgroundColor: '#007bff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    marginTop: '1rem',
+  },
+  error: {
+    color: 'red',
+    fontSize: '0.9rem',
+  },
+  linkText: {
+    marginTop: '1rem',
+    fontSize: '0.9rem',
+  },
 };
 
 export default SigninPage;

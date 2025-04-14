@@ -1,64 +1,79 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 
 const ViewFilesPage: React.FC = () => {
+    const [username, setUsername] = useState("");
     const [files, setFiles] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchFiles = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const response = await axios.get(
-                    "https://oauv21ola8.execute-api.ap-south-1.amazonaws.com/prod/retrieve"
-                );
-                setFiles(response.data.files || []);
-            } catch (err) {
-                console.error("Error fetching files:", err);
-                setError("Failed to load files.");
-            }
-            setLoading(false);
-        };
-        fetchFiles();
-    }, []);
+    const fetchFiles = async () => {
+        if (!username) {
+            setError("Please enter a username.");
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await axios.get(
+                `https://oauv21ola8.execute-api.ap-south-1.amazonaws.com/prod/retrieve?username=${username}`
+            );
+            setFiles(response.data);
+        } catch (err) {
+            console.error("Error fetching files:", err);
+            setError("Failed to load files.");
+        }
+
+        setLoading(false);
+    };
 
     return (
         <div className="container mx-auto p-6">
-            <h2 className="text-xl font-bold mb-4">Files in S3 Bucket</h2>
+            <h2 className="text-2xl font-bold mb-4">Retrieve Uploaded Files</h2>
+
+            <div className="mb-4 flex items-center gap-2">
+                <input
+                    type="text"
+                    placeholder="Enter username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="border px-3 py-2 rounded w-64"
+                />
+                <button
+                    onClick={fetchFiles}
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                >
+                    Search
+                </button>
+            </div>
+
             {loading && <p>Loading files...</p>}
             {error && <p className="text-red-500">{error}</p>}
-            {!loading && !error && (
-                <table className="w-full border-collapse border border-gray-300">
-                    <thead>
-                        <tr className="bg-gray-100">
-                            <th className="border p-2">File Name</th>
-                            <th className="border p-2">Size (Bytes)</th>
-                            <th className="border p-2">Last Modified</th>
-                            <th className="border p-2">Download</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {files.map((file, index) => (
-                            <tr key={index} className="border">
-                                <td className="border p-2">{file.fileName}</td>
-                                <td className="border p-2">{file.size}</td>
-                                <td className="border p-2">{new Date(file.lastModified).toLocaleString()}</td>
-                                <td className="border p-2">
-                                    <a
-                                        href={file.downloadUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-500 underline"
-                                    >
-                                        Download
-                                    </a>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+
+            {files.length > 0 && (
+                <ul className="mt-4 space-y-4">
+                    {files.map((file, idx) => (
+                        <li key={idx} className="border p-4 rounded shadow-md">
+                            <p><strong>Filename:</strong> {file.filename}</p>
+                            <p><strong>Size:</strong> {file.size} bytes</p>
+                            <p><strong>Last Modified:</strong> {new Date(file.lastModified).toLocaleString()}</p>
+                            <a
+                                href={file.downloadUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 underline"
+                            >
+                                Download File
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+            )}
+
+            {!loading && files.length === 0 && !error && (
+                <p>No files found for this user.</p>
             )}
         </div>
     );

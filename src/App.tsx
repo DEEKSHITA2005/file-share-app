@@ -1,11 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { FileUp, Files, Share2, Menu } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { FileUp, Files, Menu } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 
 import UploadPage from './pages/UploadPage';
 import ViewFilesPage from './pages/ViewFilesPage';
-import ShareFilePage from './pages/ShareFilePage';
 
 function App() {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -43,10 +42,6 @@ function App() {
                   <Files className="h-5 w-5 mr-1" />
                   <span>View Files</span>
                 </Link>
-                <Link to="/share" className="flex items-center text-gray-600 hover:text-blue-600">
-                  <Share2 className="h-5 w-5 mr-1" />
-                  <span>Share</span>
-                </Link>
               </div>
             </div>
           </div>
@@ -56,7 +51,6 @@ function App() {
             <div className="pt-2 pb-3 space-y-1">
               <Link to="/" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50">Upload</Link>
               <Link to="/view" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50">View Files</Link>
-              <Link to="/share" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50">Share</Link>
             </div>
           </div>
         </nav>
@@ -65,7 +59,7 @@ function App() {
           <Routes>
             <Route path="/" element={<UploadPage />} />
             <Route path="/view" element={<ViewFilesPage />} />
-            <Route path="/share" element={<ShareFilePage />} />
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
 

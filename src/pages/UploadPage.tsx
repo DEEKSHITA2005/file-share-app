@@ -3,10 +3,10 @@ import { Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt'];
-const S3_BUCKET_URL = "https://deekshita-docs.s3.ap-south-1.amazonaws.com";
 
 function UploadPage() {
   const [files, setFiles] = useState<File[]>([]);
+  const [username, setUsername] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -61,6 +61,11 @@ function UploadPage() {
   };
 
   const handleUpload = async () => {
+    if (!username.trim()) {
+      toast.error('Please enter a username.');
+      return;
+    }
+
     if (files.length === 0) {
       toast.error('Please select files to upload.');
       return;
@@ -70,19 +75,27 @@ function UploadPage() {
 
     try {
       const uploadPromises = files.map(async (file) => {
-        const uploadUrl = `${S3_BUCKET_URL}/${encodeURIComponent(file.name)}`;
-
-        const response = await fetch(uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            "Content-Type": file.type,
-          },
+        const res = await fetch("https://oauv21ola8.execute-api.ap-south-1.amazonaws.com/prod/upload", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            filename: file.name,
+            filetype: file.type,
+          }),
         });
 
-        if (!response.ok) {
-          throw new Error(`Failed to upload ${file.name}`);
-        }
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || `Failed to get upload URL for ${file.name}`);
+
+        const s3Res = await fetch(data.uploadURL, {
+          method: 'PUT',
+          body: file,
+          headers: { "Content-Type": file.type },
+        });
+
+        if (!s3Res.ok) throw new Error(`Failed to upload ${file.name}`);
 
         return file.name;
       });
@@ -90,9 +103,9 @@ function UploadPage() {
       const uploadedFiles = await Promise.all(uploadPromises);
       toast.success(`Uploaded: ${uploadedFiles.join(', ')}`);
       setFiles([]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error);
-      toast.error('Upload failed. Please check S3 permissions.');
+      toast.error(error.message || 'Upload failed');
     } finally {
       setIsUploading(false);
     }
@@ -101,6 +114,14 @@ function UploadPage() {
   return (
     <div className="p-6 max-w-xl mx-auto">
       <h2 className="text-2xl font-semibold mb-4">Upload Your Files</h2>
+
+      <input
+        type="text"
+        className="w-full border p-2 mb-4 rounded"
+        placeholder="Enter your username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+      />
 
       <div
         className={`border-2 border-dashed p-6 rounded-lg text-center transition ${

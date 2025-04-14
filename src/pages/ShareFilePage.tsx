@@ -11,10 +11,12 @@ interface FileData {
 
 function ShareFilePage() {
   const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
-  const [username, setUsername] = useState('');
+  const [receiverUsername, setReceiverUsername] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Mock data for demonstration
+  const senderUsername = localStorage.getItem('username'); // currently logged-in user
+
+  // Replace this with actual fetch to user files
   const files: FileData[] = [
     { id: '1', name: 'document1.pdf', type: 'PDF', size: '2.5 MB' },
     { id: '2', name: 'presentation.pptx', type: 'PowerPoint', size: '5.1 MB' },
@@ -25,16 +27,36 @@ function ShareFilePage() {
     file.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleShare = () => {
-    if (!selectedFile || !username) {
+  const handleShare = async () => {
+    if (!selectedFile || !receiverUsername || !senderUsername) {
       toast.error('Please select a file and enter a username');
       return;
     }
-    
-    // This will be implemented with AWS Lambda
-    toast.success(`File shared with ${username}! (Backend implementation pending)`);
-    setSelectedFile(null);
-    setUsername('');
+
+    try {
+      const response = await fetch('https://oauv21ola8.execute-api.ap-south-1.amazonaws.com/prod/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender: senderUsername,
+          receiver: receiverUsername,
+          fileName: selectedFile.name,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(`File shared with ${receiverUsername}`);
+        setSelectedFile(null);
+        setReceiverUsername('');
+      } else {
+        toast.error(data.message || 'Sharing failed');
+      }
+    } catch (err) {
+      console.error('Error sharing file:', err);
+      toast.error('Failed to share file');
+    }
   };
 
   return (
@@ -43,7 +65,7 @@ function ShareFilePage() {
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Share Documents</h1>
 
         <div className="space-y-6">
-          {/* File Selection Section */}
+          {/* File Selection */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Select File</h2>
             <div className="mb-4 relative">
@@ -57,7 +79,7 @@ function ShareFilePage() {
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
             </div>
 
-            <div className="border rounded-md overflow-hidden">
+            <div className="border rounded-md overflow-hidden max-h-60 overflow-y-auto">
               {filteredFiles.map((file) => (
                 <div
                   key={file.id}
@@ -94,8 +116,8 @@ function ShareFilePage() {
                 <input
                   type="text"
                   id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={receiverUsername}
+                  onChange={(e) => setReceiverUsername(e.target.value)}
                   placeholder="Enter username"
                   className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
                 />
@@ -103,7 +125,7 @@ function ShareFilePage() {
 
               <button
                 onClick={handleShare}
-                disabled={!selectedFile || !username}
+                disabled={!selectedFile || !receiverUsername}
                 className="w-full flex items-center justify-center bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
               >
                 <Share2 className="h-5 w-5 mr-2" />
