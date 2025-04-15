@@ -62,7 +62,7 @@ function UploadPage() {
 
   const handleUpload = async () => {
     if (!username.trim()) {
-      toast.error('Please enter a username.');
+      toast.error('Please enter an access code.');
       return;
     }
 
