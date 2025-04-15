@@ -9,7 +9,7 @@ const ViewFilesPage: React.FC = () => {
 
     const fetchFiles = async () => {
         if (!username) {
-            setError("Please enter a username.");
+            setError("Please enter the access code.");
             return;
         }
 
